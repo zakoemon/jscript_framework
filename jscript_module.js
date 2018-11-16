@@ -1,8 +1,6 @@
 var zakoemon = zakoemon || 
 (function(){
-/**
- * Add extensions to built-in objects here
- */
+
     //Add trim() to String object for jscript
     String.prototype.trim = function(){
         return this.replace(/(^s+|s+$)/g,'');
@@ -28,38 +26,44 @@ var zakoemon = zakoemon ||
 
         return{
             build : function(){
-                var _now = new Date(),
-                    _dateArr = [], _timeArr = [];
-
-                    _dateArr.push(_now.getYear());
-                    _dateArr.push(_now.getMonth());
-                    _dateArr.push(_now.getDate());
-                    _timeArr.push(_now.getHours());
-                    _timeArr.push(_now.getMinutes());
-                    _timeArr.push(_now.getSeconds());
+                var _now = new Date();
                 
                 return {
                     getYear : function(){
-                        return _dateArr[0];
+                        return _now.getYear();
                     }
                     ,getMonth : function(){
-                        return _dateArr[1];
+                        return _now.getMonth() + 1;
                     }
                     ,getDate : function(){
-                        return _dateArr[2];
+                        return _now.getDate();
                     }
                     ,getHours : function(){
-                        return _timeArr[0];
+                        return _now.getHours();
                     }
-                    ,getMinites : function(){
-                        return _timeArr[1];
+                    ,getMinutes : function(){
+                        return _now.getMinutes();
                     }
                     ,getSeconds : function(){
-                        return _timeArr[2];
+                        return _now.getSeconds();
                     }
-                    ,getDateString : function(){
-                        if(arguments.length == 0){
+                    ,getDatetimeString : function(){
+
+                        var _dateArr = [], _timeArr = [];
+
+                        _dateArr.push(this.getYear());
+                        _dateArr.push(this.getMonth());
+                        _dateArr.push(this.getDate());
+                        _timeArr.push(this.getHours());
+                        _timeArr.push(this.getMinutes());
+                        _timeArr.push(this.getSeconds());
+
+                        if(arguments.length === 0){
                             return _dateArr.join('/') + ' ' + _timeArr.join(':');
+                        }else if(arguments.length === 2){
+                            return _dateArr.join(arguments[0].trim()) + ' ' + _timeArr.join(arguments[1].trim());
+                        }else{
+                            throw 'arguments wrong';
                         }
                     }
                 }
@@ -67,43 +71,24 @@ var zakoemon = zakoemon ||
         }
     })();
     
-    var _ioSingleton = _ioSingleton || (function(){
+    var writer = (function(){
 
-        var _instance;
-
-        function _init(){
-            if(!_instance){
-                _instance = function(){
-                    var stream = null;
-                    
-                    return {
-                        initialize : function(){
-                            if(!stream) stream = new ActiveXObject('ADODB.Stream');
-                        }
-                        ,finalize : function(){
-                            stream = null;
-                        }
-                        ,write : function(txt, path){
-                            this.initialize();
-                            stream.Mode = 3;
-                            stream.Type = 2;
-                            stream.Charset = 'UTF-8';
-                            stream.Open();
-                            stream.LoadFromFile(path);
-                            stream.Position = stream.Size;
-                            stream.WriteText(txt, 1);
-                            stream.SaveToFile(path, 2);
-                            stream.Close();
-                            this.finalize();
-                        }
-                    }
-                }
-            }
-            return _instance;
+        function write(txt, path){
+            var stream = new ActiveXObject('ADODB.Stream');
+            stream.Mode = 3;
+            stream.Type = 2;
+            stream.Charset = 'UTF-8';
+            stream.Open();
+            stream.LoadFromFile(path);
+            stream.Position = stream.Size;
+            stream.WriteText(txt, 1);
+            stream.SaveToFile(path, 2);
+            stream.Close();
+            stream = null;
         }
 
         return {
-            getInstance : _init()
+            write:write
         }
     })();
 
@@ -114,21 +99,17 @@ var zakoemon = zakoemon ||
                 out.prototype[prop] = src.prototype[prop];
             }
         }
-        ,popUp:function(txt){
-            WScript.Echo(txt);
-        }
         ,getDateHandler:function(){
             return _dateStringBuilter.build();
         }
         ,write:function(txt, filePath){
-            var ioInstance = _ioSingleton.getInstance();
-            ioInstance.write(txt, filePath);
+            writer.write(txt, filePath);
         }
         ,logError:function(log){
             var dateHandler = _dateStringBuilter.build(),
                 now = null,
                 path = this.getPathHandler().buildFilePath('log.txt');
-            now = dateHandler.getDateString();
+            now = dateHandler.getDatetimeString();
             this.write('[' + now + '] ' + log, path);
         }
         ,getPathHandler:function(){
@@ -138,4 +119,3 @@ var zakoemon = zakoemon ||
 })();
 
 
-zakoemon.logError('Hello, world');
