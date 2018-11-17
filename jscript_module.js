@@ -11,10 +11,10 @@ var zakoemon = zakoemon ||
         arr.pop(arr.length - 1);
 
         return {
-            getProjectPath:function(){
+            getProjectPath : function(){
                 return arr.join('\\');
             }
-            ,buildFilePath:function(file){
+            ,buildFilePath : function(file){
                 var tmpArr = arr.slice();
                 tmpArr.push(file);
                 return tmpArr.join('\\');
@@ -71,7 +71,7 @@ var zakoemon = zakoemon ||
         }
     })();
     
-    var writer = (function(){
+    var _writer = _writer || (function(){
 
         function write(txt, path){
             var stream = new ActiveXObject('ADODB.Stream');
@@ -82,18 +82,27 @@ var zakoemon = zakoemon ||
             stream.LoadFromFile(path);
             stream.Position = stream.Size;
             stream.WriteText(txt, 1);
+
+            //Bomを削除
+            stream.Position = 0;
+            stream.Type = 1;
+            stream.Position = 3;
+            var noBom = stream.Read();
+            stream.Position = 0;
+            stream.Write(noBom);
+            stream.SetEOS();
             stream.SaveToFile(path, 2);
             stream.Close();
             stream = null;
         }
 
         return {
-            write:write
+            write : write
         }
     })();
 
     return {
-        clone:function(src, out){
+        clone : function(src, out){
             var prop;
             for(prop in src.prototype){
                 out.prototype[prop] = src.prototype[prop];
@@ -102,20 +111,21 @@ var zakoemon = zakoemon ||
         ,getDateHandler:function(){
             return _dateStringBuilter.build();
         }
-        ,write:function(txt, filePath){
-            writer.write(txt, filePath);
+        ,write : function(txt, filePath){
+            _writer.write(txt, filePath);
         }
-        ,logError:function(log){
+        ,logError : function(log){
             var dateHandler = _dateStringBuilter.build(),
                 now = null,
                 path = this.getPathHandler().buildFilePath('log.txt');
             now = dateHandler.getDatetimeString();
             this.write('[' + now + '] ' + log, path);
         }
-        ,getPathHandler:function(){
+        ,getPathHandler : function(){
             return _filePath;
         }
     }
 })();
 
+zakoemon.logError('hello');
 
